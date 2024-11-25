@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engagify</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #f6f9fc 0%, #e3edf7 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            font-size: 14px;
+        }
+
+        header {
+            width: 100%;
+            padding: 15px 20px;
+            background: linear-gradient(90deg, #1a2980, #26d0ce);
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-sizing: border-box;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: clamp(1.5em, 4vw, 2.2em);
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-left: 10px;
+            letter-spacing: 1px;
+        }
+
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .gear-icon {
+            width: clamp(25px, 5vw, 35px);
+            height: clamp(25px, 5vw, 35px);
+            filter: brightness(0) invert(1);
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            background-color: rgba(255,255,255,0.15);
+            padding: 8px 15px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .profile:hover {
+            background-color: rgba(255,255,255,0.25);
+            transform: translateY(-2px);
+        }
+
+        .profile img {
+            width: clamp(30px, 6vw, 40px);
+            height: clamp(30px, 6vw, 40px);
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .profile h2 {
+            margin: 0;
+            font-size: clamp(14px, 3vw, 16px);
+            font-weight: 500;
+            color: white;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .dropdown-btn {
+            width: clamp(35px, 6vw, 40px);
+            height: clamp(35px, 6vw, 40px);
+            font-size: 16px;
+            background-color: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-btn:hover {
+            background-color: rgba(255,255,255,0.25);
+            transform: scale(1.05);
+        }
+
+        .dropdown-content {
+            min-width: 200px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            padding: 8px 0;
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 120%;
+        }
+
+        .dropdown-content.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-content a {
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f8f9fa;
+            color: #1a2980;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            margin: 25px auto;
+            gap: 25px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 100%;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+
+        .category-select {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .category-select:focus {
+            border-color: #1a2980;
+            box-shadow: 0 0 0 3px rgba(26,41,128,0.1);
+        }
+
+        .topics-menu {
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .topics-menu h4 {
+            font-size: clamp(16px, 3vw, 18px);
+            margin-bottom: 15px;
+            color: #1a2980;
+            font-weight: 600;
+        }
+
+        .topics-menu ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .topics-menu ul li {
+            padding: 10px 15px;
+            font-size: clamp(12px, 2.5vw, 14px);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .topics-menu ul li:hover {
+            background-color: #f6f9fc;
+            color: #1a2980;
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: clamp(15px, 3vw, 25px);
+            padding: clamp(10px, 3vw, 20px);
+        }
+
+        .experience {
+            min-height: clamp(180px, 30vw, 200px);
+            background-size: cover;
+            background-position: center;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .experience::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7));
+            transition: all 0.3s ease;
+        }
+
+        .experience:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+        }
+
+        .experience:hover::before {
+            background: linear-gradient(to bottom, rgba(26,41,128,0.4), rgba(26,41,128,0.8));
+        }
+
+        .experience h4 {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            margin: 0;
+            color: white;
+            font-size: clamp(16px, 3vw, 18px);
+            font-weight: 600;
+            z-index: 1;
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 10px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .profile {
+                margin-right: 10px;
+                padding: 6px 12px;
+            }
+
+            .dropdown-content {
+                min-width: 160px;
+                right: -10px;
+            }
+
+            .container {
+                margin: 15px auto;
+                gap: 15px;
+            }
+
+            .sidebar {
+                padding: 15px;
+            }
+        }
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            header {
+                padding: 12px;
+            }
+
+            .container {
+                margin: 20px auto;
+                gap: 20px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .container {
+                flex-direction: row;
+            }
+
+            .sidebar {
+                width: 300px;
+                position: sticky;
+                top: 90px;
+                height: fit-content;
+            }
+
+            .main-content {
+                flex: 1;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="title-container">
+            <h1>Engagify</h1>
+            <img src=""C:\Users\dell\Desktop\MyAVRplatform\DALL·E 2024-11-24 10.14.40 - A minimalistic logo featuring two interlocking gear cogs, designed in white color, with a transparent background. The gears should have a clean and mo.webp"" alt="Gear Icon" class="gear-icon">
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="profile">
+                <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Profile Picture">
+                <h2>Raymond Sserwadda</h2>
+            </div>
+            <div class="dropdown">
+                <button class="dropdown-btn" onclick="toggleDropdown()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div id="myDropdown" class="dropdown-content">
+                    <a href="#profile"><i class="fas fa-user"></i> Profile</a>
+                    <a href="ContentCreationP.html"><i class="fas fa-plus-circle"></i> Content Creation</a>
+                    <a href="#help"><i class="fas fa-question-circle"></i> Help</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="sidebar">
+            <select class="category-select" id="categorySelect">
+                <option value="">Select a Category</option>
+                <option value="dece">DECE</option>
+                <option value="ditb">DITB</option>
+                <option value="dcs">DCS</option>
+                <option value="deee">DEEE</option>
+                <option value="ncict">NCICT</option>
+            </select>
+
+            <div class="topics-menu">
+                <h4>Topics</h4>
+                <ul id="topicsList">
+                    <!-- Topics will be populated dynamically -->
+                </ul>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <a href="ElectronicsWorkBench.html" class="experience" style="background-image: url('https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Electronics Workbench</h4>
+            </a>
+
+            <a href="ArduinoExploxed.html" class="experience" style="background-image: url('https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Micro Controller</h4>
+            </a>
+
+            <a href="AItestRouter.html" class="experience" style="background-image: url('https://images.unsplash.com/photo-1544197150-b99a580bb7a8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Router Tutorial</h4>
+            </a>
+
+            <a href="JSgame.html" class="experience" style="background-image: url('https://images.unsplash.com/photo-1563770660941-20978e870e26?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Electrical Home Installation Game</h4>
+            </a>
+
+            <div class="experience" style="background-image: url('https://images.unsplash.com/photo-1580706483913-b6ea7db483a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Circuit Design</h4>
+            </div>
+
+            <div class="experience" style="background-image: url('https://images.unsplash.com/photo-1563770660941-20978e870e26?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Power Systems</h4>
+            </div>
+
+            <div class="experience" style="background-image: url('https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>PCB Design</h4>
+            </div>
+
+            <div class="experience" style="background-image: url('https://images.unsplash.com/photo-1580706483913-b6ea7db483a0?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80');">
+                <h4>Digital Logic</h4>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const topicsByCategory = {
+            dece: ['Microprocessor', 'Digital Electronics', 'Research Methods', 'Electronics Workshop Practice'],
+            ditb: ['Topic 1', 'Topic 2', 'Topic 3', 'Topic 4'],
+            dcs: ['Topic 1', 'Topic 2', 'Topic 3', 'Topic 4'],
+            deee: ['Topic 1', 'Topic 2', 'Topic 3', 'Topic 4'],
+            ncict: ['Topic 1', 'Topic 2', 'Topic 3', 'Topic 4']
+        };
+
+        const categorySelect = document.getElementById('categorySelect');
+        const topicsList = document.getElementById('topicsList');
+
+        categorySelect.addEventListener('change', function() {
+            const selectedCategory = this.value;
+            updateTopics(selectedCategory);
+        });
+
+        function updateTopics(category) {
+            topicsList.innerHTML = '';
+            
+            if (category && topicsByCategory[category]) {
+                topicsByCategory[category].forEach(topic => {
+                    const li = document.createElement('li');
+                    li.textContent = topic;
+                    li.addEventListener('click', () => {
+                        console.log(`Selected topic: ${topic}`);
+                    });
+                    topicsList.appendChild(li);
+                });
+            }
+        }
+
+        function toggleDropdown() {
+            document.getElementById("myDropdown").classList.toggle("show");
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropdown-btn') && !event.target.matches('.fa-bars')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

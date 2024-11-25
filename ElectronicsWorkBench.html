@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <title>Dynamic Hotspots on 3D Model</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-bottom: 15px;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #e74c3c;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            background: #c0392b;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 50vh;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .Hotspot {
+            background: rgba(52, 152, 219, 0.8);
+            border-radius: 12px;
+            border: 2px solid white;
+            padding: 4px 8px;
+            font-size: 11px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .Hotspot:hover {
+            background: rgba(41, 128, 185, 0.9);
+        }
+
+        .HotspotAnnotation {
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-column {
+            width: 100%;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .model-column {
+            width: 100%;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+        }
+
+        .info-section h2 {
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #34495e;
+            line-height: 1.4;
+            font-size: 0.9em;
+        }
+
+        .ai-toggle-btn {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            font-size: 16px;
+            z-index: 1000;
+        }
+
+        .chatbox {
+            position: fixed;
+            bottom: 80px;
+            right: 10px;
+            width: calc(100% - 20px);
+            max-width: 350px;
+            height: 60vh;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .chatbox-header {
+            background: #3498db;
+            color: white;
+            padding: 12px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .chatbox-messages {
+            flex: 1;
+            padding: 12px;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .chatbox-input {
+            padding: 12px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+        }
+
+        .chatbox-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 13px;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                flex-direction: row;
+            }
+
+            .info-column {
+                flex: 0 0 300px;
+            }
+
+            .model-column {
+                flex: 1;
+            }
+
+            model-viewer {
+                height: 80vh;
+            }
+
+            button {
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<button class="back-button" onclick="window.location.href='index.html'">Back</button>
+<h1>Interactive 3D Model with Dynamic Hotspots</h1>
+
+<div class="container">
+    <div class="info-column">
+        <div class="info-section">
+            <h2>About Electronics Workbench</h2>
+            <p>Explore this interactive 3D model of an electronics workbench with essential test equipment.</p>
+        </div>
+
+        <div class="info-section">
+            <h2>Key Components</h2>
+            <p>- Oscilloscope<br>
+               - Function Generator<br>
+               - Power Supply<br>
+               - Input Terminals</p>
+        </div>
+
+        <div class="info-section">
+            <h2>Instructions</h2>
+            <p>Use the controls above to explore the 3D model. Toggle annotations to learn about different components.</p>
+        </div>
+    </div>
+
+    <div class="model-column">
+        <div class="controls">
+            <button onclick="toggleAnnotations()">Toggle Annotations</button>
+            <button onclick="toggleHotspotVisibility()">Show/Hide Hotspots</button>
+        </div>
+        <model-viewer src="WorkBench3.glb" 
+            ar ar-modes="webxr scene-viewer quick-look"
+            camera-controls 
+            tone-mapping="neutral"
+            shadow-intensity="1">
+            <button class="Hotspot" slot="hotspot-1" data-position="4.170089747967927m 3.6952163988491735m -1.6497845975702872m" data-normal="0m 0.07530261769722002m 0.9971607271488115m" data-visibility-attribute="visible">
+                <div class="HotspotAnnotation">Oscilloscope</div>
+            </button>
+            <button class="Hotspot" slot="hotspot-2" data-position="0.8291290191826022m 3.1619350045703443m -1.6095125802032453m" data-normal="0m 0.07530261769722005m 0.9971607271488115m" data-visibility-attribute="visible">
+                <div class="HotspotAnnotation">Function Generator</div>
+            </button>
+            <button class="Hotspot" slot="hotspot-3" data-position="-3.983149070720719m 3.9649887674600754m -1.6701569904082125m" data-normal="0m 0.07530261769722002m 0.9971607271488115m" data-visibility-attribute="visible">
+                <div class="HotspotAnnotation">Power Supply</div>
+            </button>
+            <button class="Hotspot" slot="hotspot-4" data-position="3.4769506131975922m 0.1058381199836731m 0.8789903980120539m" data-normal="0m 1m 0m" data-visibility-attribute="visible">
+                <div class="HotspotAnnotation">Input Terminals</div>
+            </button>
+        </model-viewer>
+    </div>
+</div>
+
+<button class="ai-toggle-btn" onclick="toggleChatbox()">AI</button>
+<div class="chatbox" id="chatbox">
+    <div class="chatbox-header">
+        EngagifyAI Assistant
+        <button onclick="clearChat()" style="background: none; border: none; color: white; cursor: pointer;">🗑️</button>
+    </div>
+    <div class="chatbox-messages" id="chatboxMessages"></div>
+    <div class="chatbox-input">
+        <input type="text" id="userInput" placeholder="Ask about the workbench..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    let annotationsEnabled = true;
+    let hotspotsVisible = true;
+
+    function toggleAnnotations() {
+        annotationsEnabled = !annotationsEnabled;
+        const annotations = document.querySelectorAll('.HotspotAnnotation');
+        annotations.forEach(annotation => {
+            annotation.style.display = annotationsEnabled ? 'block' : 'none';
+        });
+    }
+
+    function toggleHotspotVisibility() {
+        hotspotsVisible = !hotspotsVisible;
+        const hotspots = document.querySelectorAll('.Hotspot');
+        hotspots.forEach(hotspot => {
+            hotspot.style.display = hotspotsVisible ? 'block' : 'none';
+        });
+    }
+
+    function toggleChatbox() {
+        const chatbox = document.getElementById('chatbox');
+        chatbox.style.display = chatbox.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function clearChat() {
+        document.getElementById('chatboxMessages').innerHTML = '';
+    }
+
+    async function sendMessage() {
+        const userInput = document.getElementById('userInput');
+        const userMessage = userInput.value.trim();
+        if (!userMessage) return;
+
+        const chatboxMessages = document.getElementById('chatboxMessages');
+        chatboxMessages.innerHTML += `<p><strong>You:</strong> ${userMessage}</p>`;
+        userInput.value = '';
+        chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+
+        try {
+            const response = await fetch('https://api.microsoft.com/copilot/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer YOUR_MICROSOFT_COPILOT_API_KEY',
+                },
+                body: JSON.stringify({ query: userMessage }),
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to connect to Microsoft Copilot');
+            }
+            
+            const data = await response.json();
+            const aiResponse = data.response || 'I apologize, but I am unable to process your request at the moment.';
+            chatboxMessages.innerHTML += `<p><strong>EngagifyAI:</strong> ${aiResponse}</p>`;
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+        } catch (error) {
+            console.error('Error:', error);
+            chatboxMessages.innerHTML += `<p><strong>EngagifyAI:</strong> I apologize, but I am currently experiencing connectivity issues. Please try again later.</p>`;
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+        }
+    }
+</script>
+</body>
+</html>

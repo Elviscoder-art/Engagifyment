@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electrical Installation Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.0/pixi.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e0e0e0;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+
+        .menu {
+            flex: 1;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-bottom: 2px solid #ccc;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            max-height: 30vh;
+        }
+
+        @media (min-width: 768px) {
+            .menu {
+                flex: 0.25;
+                border-right: 2px solid #ccc;
+                border-bottom: none;
+                max-height: none;
+            }
+        }
+
+        .menu h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .menu ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 5px;
+        }
+
+        .menu ul li {
+            padding: 8px;
+            margin: 2px;
+            background-color: #d6d6d6;
+            color: #333;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            font-size: 14px;
+        }
+
+        .menu ul li:hover {
+            background-color: #bbb;
+        }
+
+        .game-canvas {
+            flex: 1;
+            background-color: #ffffff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tutorial-box {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 90%;
+            font-size: 14px;
+            z-index: 100;
+        }
+
+        .validation-button {
+            margin-top: auto;
+            padding: 8px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .validation-button:hover {
+            background-color: #45a049;
+        }
+
+        .control-button {
+            padding: 6px;
+            margin: 3px 0;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .control-button:hover {
+            background-color: #1976D2;
+        }
+
+        .control-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .delete-button {
+            background-color: #f44336;
+        }
+
+        .delete-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 8px 15px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 14px;
+        }
+
+        .back-button:hover {
+            background-color: #555;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">Back</a>
+    <div class="container">
+        <div class="menu">
+            <h2>Electrical Components</h2>
+            <button class="control-button" onclick="undoAction()" id="undoBtn" disabled>Undo</button>
+            <button class="control-button" onclick="redoAction()" id="redoBtn" disabled>Redo</button>
+            <button class="control-button delete-button" onclick="deleteSelected()" id="deleteBtn" disabled>Delete</button>
+            <ul>
+                <li onclick="selectComponent('one-way-switch')">One-Way Switch</li>
+                <li onclick="selectComponent('two-way-switch')">Two-Way Switch</li>
+                <li onclick="selectComponent('three-way-switch')">Three-Way Switch</li>
+                <li onclick="selectComponent('light-bulb')">Light Bulb</li>
+                <li onclick="selectComponent('wire-live')">Live Wire</li>
+                <li onclick="selectComponent('wire-neutral')">Neutral Wire</li>
+                <li onclick="selectComponent('wire-ground')">Ground Wire</li>
+                <li onclick="selectComponent('power-source')">Power Source</li>
+                <li onclick="selectComponent('junction-box')">Junction Box</li>
+                <li onclick="selectComponent('connector')">Connector</li>
+            </ul>
+            <button class="validation-button" onclick="validateCircuit()">Validate Circuit</button>
+        </div>
+        <div class="game-canvas" id="gameCanvas"></div>
+    </div>
+
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth * 0.75,
+            height: window.innerHeight,
+            parent: 'gameCanvas',
+            backgroundColor: '#ffffff',
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            },
+            physics: {
+                default: 'matter',
+                matter: {
+                    debug: false,
+                    gravity: { y: 0 }
+                }
+            }
+        };
+
+        let selectedComponent = null;
+        let components = [];
+        let wires = [];
+        let startPoint = null;
+        let graphics;
+        let currentLevel = 1;
+        let tutorialText;
+        let selectedObject = null;
+        
+        // Undo/Redo stacks
+        let undoStack = [];
+        let redoStack = [];
+
+        const game = new Phaser.Game(config);
+
+        function preload() {
+            // One-way switch - simple toggle switch symbol
+            const oneWaySwitch = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHESURBVGiB7ZixTsMwEIbPaRkQYmRiQYiHQEItA2JhYGDmEZB4A16Fha0SD8HAzMQLMHRgQQyIBSEmEBQqoUoRxGkcn+8c8Delae7Of5/t3F0S4B9DCCFwHn0F4BDADoA1AEsAJgBGAG4AXPQ8bxh6KKV0EUK8AkgBqJLRB7Dtuu5P2YMBQN/3XQADAMsAFgDMALwBOAGwCmC+YHwC2HJd97v0YKXUOoAXAFbG/QTAoe/7D3UPt237FMBFwdQYwIbruh+lB6eUGwDuASxm3H8DOEgS5z6vARvAE4DFnPs3gN0kce6MMQCAUuoUwHnO/QvATpI496YNKKUOAVwWTL0D2E0S584YQwghrDiOhwDWC6Z/ms3mVhRFE2MMhRCmlNJJkuQWQFQw/dNqtbaiKBobYzQajVgcx0MAGwVTPgBvfn5ujDGklJsA7gDY+akCoNdoNA7iOP4yxgAAx3EUgGcA8wVTPoBDx3GuS+8DjLFprVb7BPBYMj0FcOS67lXpwcYYlud5PQAPJdNTAMeO41yWHhwEged53h6AewCTgukA4JnjOBelBwdB4Hued1Cr1b6CIPgumS4AzgAcz/3+vwR/gD/6xvZBvwco/QAAAABJRU5ErkJggg==';
+            
+            // Two-way switch - double switch symbol
+            const twoWaySwitch = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAHxSURBVGiB7ZixTsMwEIbPaRkQYmRiQYiHQEItA2JhYGDmEZB4A16Fha0SD8HAzMQLMHRgQQyIBSEmEBQqoUoRxGkcn+8c8Delae7Of5/t3F0S4B9DCCFwHn0F4BDADoA1AEsAJgBGAG4AXPQ8bxh6KKV0EUK8AkgBqJLRB7Dtuu5P2YMBQN/3XQADAMsAFgDMALwBOAGwCmC+YHwC2HJd97v0YKXUOoAXAFbG/QTAoe/7D3UPt237FMBFwdQYwIbruh+lB6eUGwDuASxm3H8DOEgS5z6vARvAE4DFnPs3gN0kce6MMQCAUuoUwHnO/QvATpI496YNKKUOAVwWTL0D2E0S584YQwghrDiOhwDWC6Z/ms3mVhRFE2MMhRCmlNJJkuQWQFQw/dNqtbaiKBobYzQajVgcx0MAGwVTPgBvfn5ujDGklJsA7gDY+akCoNdoNA7iOP4yxgAAx3EUgGcA8wVTPoBDx3GuS+8DjLFprVb7BPBYMj0FcOS67lXpwcYYlud5PQAPJdNTAMeO41yWHhwEged53h6AewCTgukA4JnjOBelBwdB4Hued1Cr1b6CIPgumS4AzgAcz/3+vwR/gD/6xvZBvwco/QAAAABJRU5ErkJggg==';
+            
+            // Three-way switch - triple switch symbol
+            const threeWaySwitch = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAJVSURBVGiB7ZixTxRBFMZ/b3fvDgvkLkYKEwsTE2MHJBqIhYWFMf4REv4G/hUWtib+ERY2Jr4AA4UFMSaxIBYXEmO4RDwvt7szz2K9I8DtzezuDFj4JZvMzJv3vvd9M/tmZgU6DiGEwGXyBYBjYA/YBNaAZWAKjIE7YNDr9YqoQ0rpI4R4ApADqmKMgF3f93/qXgwABkHgAxfACrAAzIEX4BQ4ANYBp2J8Duz4vv9d+2KlVB94BJwl9lNgGATBVdPLHcc5A4aVqQmw7fv+R+2LU8pNAM+AUzL/G3CUJM5l0wQc4B7YLvF/A/aTxLlsjUEIIew4jq+BfsX0z2q1uhNF0dQaQwhhSyndJEkeAFGZ6fv+ZhRFE2uMVqvF4jgeAdsVUyGwVSwWj+M4/rLGAIAkSRSAe2ChYioEjhzHGdTeB4QQTqfT+QTwWDM9A06SJBnUvtgaw3Vd/xy4rZmeASeu6wxqX9xqtVzXdQ+Be+C1YjoEbhzHGdS+OAiCwHXdI9/3n4Mg+K6ZLgDXwMnC7/9b4A/wR9/YPuj3AHU/QBRF7SAIHoQQX0EQfNdMlwBXwPHc7/9LYIxhOY5zBjzUTM8Bp+7+vzUGgFLqFLipmZ4Dp0mSXNa+OAiCwHXdQ+AZmFZMh8Ct4ziD2hcHQRC4rnskhPgKguCnZroA3AAnC7//b4E/wB99Y/ug3wPU/gBCCEtK6QG7wAawCiwBU2AM3AO3QRBcV51FKX0hxCOQA6pitADsep73XTc5gN8k0vHKOCEHGwAAAABJRU5ErkJggg==';
+            
+            // Light bulb
+            const lightBulb = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAKESURBVGiB7ZjPTxNBFMc/s7vdloJSfoMYD148GE08eOKgHjTx4sXEv8GEv8F/wcSbJ/8IEw8evHjwYDTRxIOJIQYCaKCFQqHQdvfNeLCkdHfabXe6S0z2k0x235v3Zr7z3sy+N7PAHnsbIYQQGNeXgVPAEaAf6AYSwCrwE5gBJnp7e1fCLqWUMUKIz0AOUDXHErDX87z1pjcGAIPBYBCYBbqBNiAP/AY+AQeAeI3wPLDP87yNphcrpfqAL0C8Iv0vcDIYDH5oOrlpmh+B8RrSa8Aez/M2m16cUu4EMAckqkT+AMeDweCq6QQx4Aewv4r0L+Co53mTTQsIIYQdj8cXgf4a8p/d3d0DURT9s0YQQphSSicWi80AUQ15r9fr90VRlLdGaG9vZ/HixQVgoIZ8Gmg/e/bswzVrDIAoihQwDbTVkE8Bh4eGhj5bYwAQRdEYMF9HfgU4NDw8/M4aIRQKhYPHjx9fAJYbyC8Bh0ZGRt5aI4RCoXBwbGxsDlhuIL8CHB4ZGXlnjRAKhcLBM2fOzAHLDeRXgSPnzp17b40QCoWCwbNnz84DS3Xk14Cj58+ff2ONEAqFgsELFy7MAwt15NeB4YsXL76xRgiFQsHgpUuX5oD5OvIbwInLly+/tkYIhULB4JUrV+aAuTryOWDk6tWrr6wRQqFQMHj9+vU5YLaO/CZw8saNG5PWCKFQKBi8efPmHPC9jnweuHXr1qRRQimlA0wBbVXkN4ETt2/fnrBGEEJYUsoZ4GAV+U3g+J07dyasEYQQlpRyGthXRX4LOHb37t0JawQhhCWlnAL2VpHPA6P37t2bsEYQQlhSyk/AwSryBWDs/v37E9YIoVAoePv27e9SSiWl/FdHvgCMA2N7//9LsEf5D0kFEeF+CNYgAAAAAElFTkSuQmCC';
+            
+            // Power source
+            const powerSource = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAGESURBVGiB7ZixSsRAEIb/2SQniKWFhYWFhYWFYyOCjY2FvoeIvoav4mNY2dj4AoKFhYVgYWMhiKWFhRYiHJrNjsXlCHf3kuyeG7kPAsk/M/nvz2STTQr8M4gIOMm+AXAKYBfAJoAVADMAUwCvAK57nvcW+1BK6RFCvAPIAKiS8QRgx/f9n7oXA4BBEPgA7gGsAlgCUAB4B3AOYAOAUzE+B7Z933+vfbFSahPAC4B4yf0MwEkQBA9ND7dt+wrAbcnUFMCW7/sftS9OKTcBPAKIl9x/AzgNw/C+qQEHwDOAtRL/N4D9MAzvWmMQEdhxHE8AbJdM/6ytrW1FUTSzxiAiZkrphmH4CCCqmPZ9fzuKopk1RqfTYXEcTwBsl0yFABbz+fwsjuMvawwACMNQAbgDsFQyFQI4c133tvY5QETMdd1LAI8l0zMAF2EYXte+2BrDdd0rAA8l0wWAazd0b2pf3G63Xdc9AfAEYFYxHQK4B3C29Pv/FvgD/NE3tg/6PUDtD0BEzJTSA7AHYBPABQB/AeoLVTAj5BNUAAAAAElFTkSuQmCC';
+            
+            // Junction box
+            const junctionBox = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAE5SURBVGiB7ZixSsRAEIb/2SQniKWFhYWFhYWFYGMjgo2NhT6HiL6Gr+JjWNnY+AKChYWFYGFjIYilhYUWIhyazY7F5Qh395LsnRv5PgjkPzP5789kk00K/DOICDjJvgFwCmAXwCaAFQAzAFMALwCue573FvtQSukRQrwDyACokjEBsOP7/k/diwHAIAh8APcAVgEsASgAvAM4B7ABwKkYnwPbvu+/175YKbUJ4AXAeMn9DMBJEAQPTQPbtn0F4LZkagpgy/f9j9oXp5SbAB4BjJfc5wBOwzC8b2rAAfAMYK3E/w1gPwzDu9YYRMTiOJ4A2C6Z/llbW9uKomhmjUFEzJTSDcPwEUBUMe37/nYURTNrjE6nw+I4ngDYLpkKASzm8/lZHMdf1hgAEIahAnAHYKlkKgRw5rruTe1zgIiY67qXAB5LpmcALsIwvK59sTWG67pXAB5KpgsA127o3tS+uN1uu657AuAJwKxiOgRwD+Bs6ff/LfAH+KNvbB/0e4DaH4CImCmlB2APwCaACwD+AlZLQR0/HBq0AAAAAElFTkSuQmCC';
+
+            // Electrical connector
+            const connector = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAE5SURBVGiB7ZixSsRAEIb/2SQniKWFhYWFhYWFYGMjgo2NhT6HiL6Gr+JjWNnY+AKChYWFYGFjIYilhYUWIhyazY7F5Qh395LsnRv5PgjkPzP5789kk00K/DOICDjJvgFwCmAXwCaAFQAzAFMALwCue573FvtQSukRQrwDyACokjEBsOP7/k/diwHAIAh8APcAVgEsASgAvAM4B7ABwKkYnwPbvu+/175YKbUJ4AXAeMn9DMBJEAQPTQPbtn0F4LZkagpgy/f9j9oXp5SbAB4BjJfc5wBOwzC8b2rAAfAMYK3E/w1gPwzDu9YYRMTiOJ4A2C6Z/llbW9uKomhmjUFEzJTSDcPwEUBUMe37/nYURTNrjE6nw+I4ngDYLpkKASzm8/lZHMdf1hgAEIahAnAHYKlkKgRw5rruTe1zgIiY67qXAB5LpmcALsIwvK59sTWG67pXAB5KpgsA127o3tS+uN1uu657AuAJwKxiOgRwD+Bs6ff/LfAH+KNvbB/0e4DaH4CImCmlB2APwCaACwD+AlZLQR0/HBq0AAAAAElFTkSuQmCC';
+
+            // Load all images
+            this.textures.addBase64('one-way-switch', oneWaySwitch);
+            this.textures.addBase64('two-way-switch', twoWaySwitch);
+            this.textures.addBase64('three-way-switch', threeWaySwitch);
+            this.textures.addBase64('light-bulb', lightBulb);
+            this.textures.addBase64('power-source', powerSource);
+            this.textures.addBase64('junction-box', junctionBox);
+            this.textures.addBase64('connector', connector);
+        }
+
+        function create() {
+            graphics = this.add.graphics();
+            
+            // Tutorial text
+            tutorialText = this.add.text(10, this.sys.game.config.height - 60, getTutorialText(), {
+                font: '16px Arial',
+                fill: '#fff',
+                backgroundColor: '#000',
+                padding: { x: 10, y: 5 }
+            });
+            tutorialText.setDepth(1);
+
+            // Component placement handler
+            this.input.on('pointerdown', (pointer) => {
+                if (selectedComponent && selectedComponent.startsWith('wire-')) {
+                    if (!startPoint) {
+                        startPoint = { x: pointer.x, y: pointer.y };
+                    } else {
+                        const wire = drawWire(this, startPoint, { x: pointer.x, y: pointer.y });
+                        undoStack.push({
+                            type: 'wire',
+                            data: wire
+                        });
+                        updateUndoRedoButtons();
+                        startPoint = null;
+                    }
+                } else if (selectedComponent) {
+                    const component = this.matter.add.image(pointer.x, pointer.y, selectedComponent);
+                    component.setInteractive();
+                    component.setFriction(0.8);
+                    component.setBounce(0.5);
+                    component.type = selectedComponent;
+
+                    component.on('pointerdown', function() {
+                        selectedObject = this;
+                        document.getElementById('deleteBtn').disabled = false;
+                    });
+
+                    components.push(component);
+                    undoStack.push({
+                        type: 'component',
+                        data: component
+                    });
+                    updateUndoRedoButtons();
+
+                    // Add connection points
+                    component.connectionPoints = addConnectionPoints(this, component);
+                }
+            });
+
+            // Component dragging
+            this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+                gameObject.x = dragX;
+                gameObject.y = dragY;
+                updateWireConnections(gameObject);
+            });
+
+            // Rotation with right-click
+            this.input.on('pointerup', (pointer) => {
+                if (pointer.rightButtonReleased()) {
+                    const clicked = components.find(c => 
+                        Phaser.Math.Distance.Between(c.x, c.y, pointer.x, pointer.y) < 30
+                    );
+                    if (clicked) {
+                        clicked.rotation += Math.PI/2;
+                        updateWireConnections(clicked);
+                    }
+                }
+            });
+        }
+
+        function update() {
+            // Update component states and connections
+            updateCircuitState();
+        }
+
+        function selectComponent(component) {
+            selectedComponent = component;
+            startPoint = null;
+            console.log(`Selected component: ${component}`);
+        }
+
+        function undoAction() {
+            if (undoStack.length > 0) {
+                const action = undoStack.pop();
+                if (action.type === 'component') {
+                    const index = components.indexOf(action.data);
+                    if (index > -1) {
+                        components.splice(index, 1);
+                        action.data.destroy();
+                    }
+                } else if (action.type === 'wire') {
+                    const index = wires.indexOf(action.data);
+                    if (index > -1) {
+                        wires.splice(index, 1);
+                        graphics.clear();
+                        wires.forEach(wire => {
+                            const wireColor = WIRE_COLORS[wire.wireType] || 0x000000;
+                            graphics.lineStyle(2, wireColor, 1);
+                            graphics.beginPath();
+                            graphics.moveTo(wire.start.x, wire.start.y);
+                            graphics.lineTo(wire.end.x, wire.end.y);
+                            graphics.strokePath();
+                        });
+                    }
+                }
+                redoStack.push(action);
+                updateUndoRedoButtons();
+            }
+        }
+
+        function redoAction() {
+            if (redoStack.length > 0) {
+                const action = redoStack.pop();
+                if (action.type === 'component') {
+                    components.push(action.data);
+                    action.data.setActive(true);
+                    action.data.setVisible(true);
+                } else if (action.type === 'wire') {
+                    wires.push(action.data);
+                    const wireColor = WIRE_COLORS[action.data.wireType] || 0x000000;
+                    graphics.lineStyle(2, wireColor, 1);
+                    graphics.beginPath();
+                    graphics.moveTo(action.data.start.x, action.data.start.y);
+                    graphics.lineTo(action.data.end.x, action.data.end.y);
+                    graphics.strokePath();
+                }
+                undoStack.push(action);
+                updateUndoRedoButtons();
+            }
+        }
+
+        function deleteSelected() {
+            if (selectedObject) {
+                const index = components.indexOf(selectedObject);
+                if (index > -1) {
+                    components.splice(index, 1);
+                    selectedObject.destroy();
+                    selectedObject = null;
+                    document.getElementById('deleteBtn').disabled = true;
+                }
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            document.getElementById('undoBtn').disabled = undoStack.length === 0;
+            document.getElementById('redoBtn').disabled = redoStack.length === 0;
+        }
+
+        // Add wire colors constant
+        const WIRE_COLORS = {
+            'wire-live': 0xff0000,    // Red
+            'wire-neutral': 0x000000, // Black
+            'wire-ground': 0x00ff00   // Green
+        };
+
+        function drawWire(scene, start, end) {
+            // Get wire color based on selected type
+            const wireColor = WIRE_COLORS[selectedComponent] || 0x000000;
+            
+            graphics.lineStyle(2, wireColor, 1);
+            graphics.beginPath();
+            graphics.moveTo(start.x, start.y);
+            graphics.lineTo(end.x, end.y);
+            graphics.strokePath();
+
+            const wire = {
+                start: start,
+                end: end,
+                powered: false,
+                wireType: selectedComponent
+            };
+
+            wires.push(wire);
+            return wire;
+        }
+
+        function addConnectionPoints(scene, component) {
+            const points = [];
+            // Add connection points based on component type
+            switch(component.type) {
+                case 'light-bulb':
+                    points.push({x: -20, y: 0}, {x: 20, y: 0});
+                    break;
+                case 'power-source':
+                    points.push({x: 20, y: 0});
+                    break;
+                // Add more cases for other components
+            }
+            return points;
+        }
+
+        function updateWireConnections(component) {
+            // Update connected wires when components move
+            wires.forEach(wire => {
+                // Update wire positions based on component connection points
+            });
+        }
+
+        function updateCircuitState() {
+            // Implement circuit logic here
+            // Check connections and update component states
+        }
+
+        function validateCircuit() {
+            // Implement circuit validation logic
+            const isValid = checkCircuitValidity();
+            if (isValid) {
+                currentLevel++;
+                tutorialText.setText(getTutorialText());
+                // Clear current circuit
+                resetCircuit();
+            } else {
+                alert('Circuit is not correctly configured. Please check your connections.');
+            }
+        }
+
+        function getTutorialText() {
+            const tutorials = {
+                1: "Level 1: Create a simple circuit with one-way switch and light bulb",
+                2: "Level 2: Create a two-way switch configuration",
+                3: "Level 3: Create a three-way switch configuration"
+            };
+            return tutorials[currentLevel] || "Complete!";
+        }
+
+        function checkCircuitValidity() {
+            // Implement circuit validation logic based on current level
+            return false; // Placeholder
+        }
+
+        function resetCircuit() {
+            components.forEach(c => c.destroy());
+            components = [];
+            wires = [];
+            graphics.clear();
+        }
+    </script>
+</body>
+</html>

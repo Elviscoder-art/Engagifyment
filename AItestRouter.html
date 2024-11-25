@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <title>Interactive Router Model</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            padding: 0 10px;
+        }
+
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            margin-bottom: 15px;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        button:hover {
+            background: #2980b9;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #e74c3c;
+            z-index: 100;
+        }
+
+        .back-button:hover {
+            background: #c0392b;
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 50vh;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        model-viewer::part(default-progress-bar) {
+            background: #3498db;
+        }
+
+        .Hotspot {
+            background: rgba(52, 152, 219, 0.8);
+            border-radius: 12px;
+            border: 2px solid white;
+            padding: 4px 8px;
+            font-size: 11px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .Hotspot:hover {
+            background: rgba(41, 128, 185, 0.9);
+        }
+
+        .HotspotAnnotation {
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-column {
+            width: 100%;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .model-column {
+            width: 100%;
+        }
+
+        .controls {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+        }
+
+        .info-section h2 {
+            color: #2c3e50;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            color: #34495e;
+            line-height: 1.5;
+            font-size: 0.9em;
+        }
+
+        .ai-toggle-btn {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            width: 50px;
+            height: 50px;
+            font-size: 16px;
+            z-index: 1000;
+        }
+
+        .chatbox {
+            position: fixed;
+            bottom: 80px;
+            right: 15px;
+            width: calc(100% - 30px);
+            max-width: 350px;
+            height: 60vh;
+            z-index: 1000;
+        }
+
+        .chatbox-header {
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        .chatbox-messages {
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .chatbox-input {
+            padding: 12px;
+        }
+
+        .chatbox-input input {
+            padding: 8px;
+            font-size: 13px;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                flex-direction: row;
+                gap: 30px;
+            }
+
+            .info-column {
+                flex: 0 0 300px;
+            }
+
+            .model-column {
+                flex: 1;
+            }
+
+            model-viewer {
+                height: 70vh;
+            }
+
+            button {
+                font-size: 16px;
+                padding: 10px 20px;
+            }
+
+            .chatbox {
+                width: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+<a href="index.html"><button class="back-button">Back</button></a>
+<h1>Interactive Router Model</h1>
+
+<div class="container">
+    <div class="info-column">
+        <div class="info-section">
+            <h2>About Router</h2>
+            <p>A wireless router is a networking device that connects your devices to the internet and creates a local network.</p>
+        </div>
+
+        <div class="info-section">
+            <h2>Key Components</h2>
+            <p>- Antennas<br>
+               - Ethernet Ports<br>
+               - Power Input<br>
+               - Status LEDs<br>
+               - Reset Button</p>
+        </div>
+
+        <div class="info-section">
+            <h2>Instructions</h2>
+            <p>Use the controls above to explore the 3D model. Toggle annotations to learn about different components.</p>
+        </div>
+    </div>
+
+    <div class="model-column">
+        <div class="controls">
+            <button onclick="toggleAnnotations()">Toggle Annotations</button>
+            <button onclick="toggleHotspotVisibility()">Show/Hide Hotspots</button>
+        </div>
+        <model-viewer id="routerModel" 
+            src="router1.glb" 
+            ar ar-modes="webxr scene-viewer quick-look"
+            camera-controls 
+            tone-mapping="neutral"
+            shadow-intensity="1"
+            camera-orbit="0deg 75deg 105%">
+            <button class="Hotspot" slot="hotspot-1" 
+                data-position="-0.8908240317896761m 0.48266629476012046m -0.5432248987198192m" 
+                data-normal="0.544910603819946m -0.22429508712884713m 0.8079382078689216m">
+                <div class="HotspotAnnotation">Antenna</div>
+            </button>
+            <button class="Hotspot" slot="hotspot-2" 
+                data-position="-2.0602705387439935m 0.14902120174559497m -0.32744932174682695m" 
+                data-normal="0m 0m -1m">
+                <div class="HotspotAnnotation">Ethernet Port</div>
+            </button>
+        </model-viewer>
+    </div>
+</div>
+
+<!-- AI Assistant -->
+<button class="ai-toggle-btn" onclick="toggleChatbox()">AI</button>
+<div class="chatbox" id="chatbox">
+    <div class="chatbox-header">
+        EngagifyAI Assistant
+        <button onclick="clearChat()" style="background: none; border: none; color: white; cursor: pointer;">🗑️</button>
+    </div>
+    <div class="chatbox-messages" id="chatboxMessages"></div>
+    <div class="chatbox-input">
+        <input type="text" id="userInput" placeholder="Ask about the router..." onkeypress="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+    let annotationsEnabled = true;
+    let hotspotsVisible = true;
+
+    function toggleAnnotations() {
+        annotationsEnabled = !annotationsEnabled;
+        const annotations = document.querySelectorAll('.HotspotAnnotation');
+        annotations.forEach(annotation => {
+            annotation.style.display = annotationsEnabled ? 'block' : 'none';
+        });
+    }
+
+    function toggleHotspotVisibility() {
+        hotspotsVisible = !hotspotsVisible;
+        const hotspots = document.querySelectorAll('.Hotspot');
+        hotspots.forEach(hotspot => {
+            hotspot.style.display = hotspotsVisible ? 'block' : 'none';
+        });
+    }
+
+    function toggleChatbox() {
+        const chatbox = document.getElementById('chatbox');
+        chatbox.style.display = chatbox.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    function clearChat() {
+        document.getElementById('chatboxMessages').innerHTML = '';
+    }
+
+    async function sendMessage() {
+        const userInput = document.getElementById('userInput');
+        const userMessage = userInput.value.trim();
+        if (!userMessage) return;
+
+        const chatboxMessages = document.getElementById('chatboxMessages');
+        chatboxMessages.innerHTML += `<p><strong>You:</strong> ${userMessage}</p>`;
+        userInput.value = '';
+        chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+
+        try {
+            const response = await fetch('https://api.microsoft.com/copilot/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer YOUR_MICROSOFT_COPILOT_API_KEY',
+                },
+                body: JSON.stringify({ query: userMessage }),
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to connect to Microsoft Copilot');
+            }
+            
+            const data = await response.json();
+            const aiResponse = data.response || 'I apologize, but I am unable to process your request at the moment.';
+            chatboxMessages.innerHTML += `<p><strong>EngagifyAI:</strong> ${aiResponse}</p>`;
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+        } catch (error) {
+            console.error('Error:', error);
+            chatboxMessages.innerHTML += `<p><strong>EngagifyAI:</strong> I apologize, but I am currently experiencing connectivity issues. Please try again later.</p>`;
+            chatboxMessages.scrollTop = chatboxMessages.scrollHeight;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const modelViewer = document.querySelector("#routerModel");
+    });
+</script>
+</body>
+</html>

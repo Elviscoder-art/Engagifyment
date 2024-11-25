@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engagify - Content Creation</title>
+    <!-- Import model-viewer component -->
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        header {
+            width: 100%;
+            padding: 10px 5px;
+            background: linear-gradient(90deg, #2c3e50, #3498db);
+            color: white;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            word-wrap: break-word;
+            padding: 0 10px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 98%;
+            max-width: 1200px;
+            margin: 10px 0;
+            gap: 10px;
+            padding: 5px;
+        }
+
+        .upload-area {
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 15px 8px;
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        }
+
+        .upload-area:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.12);
+        }
+
+        .upload-area.dragover {
+            border-color: #2ecc71;
+            background-color: rgba(46, 204, 113, 0.1);
+        }
+
+        .upload-area p {
+            margin: 0;
+            font-size: clamp(14px, 2.5vw, 18px);
+            color: #34495e;
+            font-weight: 500;
+            padding: 0 8px;
+        }
+
+        .toolbox {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        @media (min-width: 481px) {
+            .toolbox {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+
+        .toolbox button {
+            padding: 10px;
+            font-size: clamp(13px, 2vw, 15px);
+            color: white;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .canvas {
+            border-radius: 12px;
+            background-color: rgba(255, 255, 255, 0.95);
+            height: 45vh;
+            min-height: 250px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.12);
+        }
+
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+
+        .hotspot {
+            width: 15px;
+            height: 15px;
+            border-radius: 8px;
+        }
+
+        .annotation {
+            background-color: #fff;
+            position: absolute;
+            transform: translate(8px, 8px);
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+            font-size: clamp(11px, 2vw, 13px);
+            max-width: 90%;
+            word-wrap: break-word;
+        }
+
+        .preview-container {
+            padding: 5px;
+        }
+
+        .preview-content {
+            width: 98%;
+            height: 95%;
+            margin: 2% auto;
+            border-radius: 12px;
+            padding: 10px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        @media (min-width: 481px) {
+            .controls {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+        }
+
+        .controls button {
+            padding: 10px 15px;
+            font-size: clamp(13px, 2vw, 15px);
+        }
+
+        .media-player {
+            width: 95%;
+            max-width: 280px;
+            top: 5px;
+            right: 5px;
+            border-radius: 8px;
+            padding: 6px;
+        }
+
+        .media-player video,
+        .media-player audio {
+            width: 100%;
+            border-radius: 4px;
+            max-height: 180px;
+        }
+
+        @media (max-width: 360px) {
+            header h1 {
+                font-size: 1rem;
+            }
+
+            .container {
+                width: 100%;
+                gap: 8px;
+            }
+
+            .canvas {
+                height: 40vh;
+            }
+
+            .media-player {
+                width: 90%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Rest of the HTML and JavaScript code remains the same -->
+<header>
+    <h1>Engagify - Experience Creation Page</h1>
+</header>
+
+<div class="container">
+    <!-- Upload Area -->
+    <div id="upload-area" class="upload-area">
+        <p>Drag & Drop GLB files here or click to upload</p>
+        <input type="file" id="file-input" accept=".glb" style="display: none;">
+    </div>
+
+    <!-- Toolbox -->
+    <div class="toolbox">
+        <button id="add-annotation">Add Annotation</button>
+        <button id="add-audio">Add Audio</button>
+        <button id="add-video">Add Video</button>
+    </div>
+
+    <!-- Canvas -->
+    <div id="canvas" class="canvas">
+        <p>Upload a GLB file to begin creating your experience!</p>
+        <div id="media-player" class="media-player" style="display: none;">
+            <video id="video-player" controls style="display: none;"></video>
+            <audio id="audio-player" controls style="display: none;"></audio>
+        </div>
+    </div>
+
+    <!-- Save Controls -->
+    <div class="controls">
+        <button id="save-experience">Save Experience</button>
+        <button id="clear-experience">Clear Experience</button>
+        <button id="preview-experience">Preview Experience</button>
+    </div>
+</div>
+
+<!-- Preview Container -->
+<div id="preview-container" class="preview-container">
+    <div class="preview-content">
+        <span class="close-preview" onclick="closePreview()">&times;</span>
+        <div id="preview-canvas"></div>
+    </div>
+</div>
+
+<script>
+    // DOM Elements
+    const uploadArea = document.getElementById('upload-area');
+    const fileInput = document.getElementById('file-input');
+    const canvas = document.getElementById('canvas');
+    const addAnnotationBtn = document.getElementById('add-annotation');
+    const addAudioBtn = document.getElementById('add-audio');
+    const addVideoBtn = document.getElementById('add-video');
+    const saveExperienceBtn = document.getElementById('save-experience');
+    const clearExperienceBtn = document.getElementById('clear-experience');
+    const previewExperienceBtn = document.getElementById('preview-experience');
+    const previewContainer = document.getElementById('preview-container');
+    const mediaPlayer = document.getElementById('media-player');
+    const videoPlayer = document.getElementById('video-player');
+    const audioPlayer = document.getElementById('audio-player');
+
+    let experience = {
+        model: null,
+        annotations: [],
+        media: []
+    };
+
+    let modelViewer = null;
+    let isAnnotationMode = false;
+
+    // File Upload Handlers
+    uploadArea.addEventListener('click', () => fileInput.click());
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileUpload(file);
+    });
+    fileInput.addEventListener('change', (e) => handleFileUpload(e.target.files[0]));
+
+    function handleFileUpload(file) {
+        if (!file.name.toLowerCase().endsWith('.glb')) {
+            alert('Only GLB files are supported!');
+            return;
+        }
+        experience.model = file;
+        
+        // Create model viewer and display the model
+        modelViewer = document.createElement('model-viewer');
+        modelViewer.src = URL.createObjectURL(file);
+        modelViewer.setAttribute('camera-controls', '');
+        modelViewer.setAttribute('ar', '');
+        modelViewer.setAttribute('shadow-intensity', '1');
+        modelViewer.setAttribute('exposure', '0.75');
+        modelViewer.setAttribute('touch-action', 'pan-y');
+        
+        canvas.innerHTML = '';
+        canvas.appendChild(modelViewer);
+        canvas.appendChild(mediaPlayer);
+
+        // Add click/touch listener for annotations
+        modelViewer.addEventListener('click', handleModelInteraction);
+        modelViewer.addEventListener('touchend', handleModelInteraction);
+    }
+
+    function handleModelInteraction(event) {
+        if (!isAnnotationMode) return;
+        
+        event.preventDefault();
+        const coords = event.type === 'click' ? 
+            {x: event.clientX, y: event.clientY} : 
+            {x: event.changedTouches[0].clientX, y: event.changedTouches[0].clientY};
+            
+        const hit = modelViewer.positionAndNormalFromPoint(coords.x, coords.y);
+        if (hit) {
+            const {position} = hit;
+            const componentName = prompt('Enter the component name:');
+            if (componentName) {
+                addHotspotToScene(position, componentName);
+                isAnnotationMode = false;
+            }
+        }
+    }
+
+    function addHotspotToScene(position, componentName) {
+        const hotspot = document.createElement('button');
+        hotspot.slot = `hotspot-${experience.annotations.length}`;
+        hotspot.classList.add('hotspot');
+        hotspot.dataset.position = position.toString();
+
+        const annotation = document.createElement('div');
+        annotation.classList.add('annotation');
+        annotation.textContent = componentName;
+        annotation.contentEditable = true;
+        annotation.slot = `annotation-${experience.annotations.length}`;
+        
+        modelViewer.appendChild(hotspot);
+        modelViewer.appendChild(annotation);
+
+        experience.annotations.push({
+            position: position,
+            text: componentName
+        });
+    }
+
+    function playMedia(file, type) {
+        mediaPlayer.style.display = 'block';
+        
+        if (type === 'video') {
+            videoPlayer.style.display = 'block';
+            audioPlayer.style.display = 'none';
+            videoPlayer.src = URL.createObjectURL(file);
+            videoPlayer.play();
+        } else if (type === 'audio') {
+            audioPlayer.style.display = 'block';
+            videoPlayer.style.display = 'none';
+            audioPlayer.src = URL.createObjectURL(file);
+            audioPlayer.play();
+        }
+    }
+
+    // Add Annotation
+    addAnnotationBtn.addEventListener('click', () => {
+        if (!experience.model) {
+            alert('Please upload a GLB file first!');
+            return;
+        }
+
+        isAnnotationMode = true;
+        alert('Tap anywhere on the model to add an annotation');
+    });
+
+    // Add Audio
+    addAudioBtn.addEventListener('click', () => {
+        if (!experience.model) {
+            alert('Please upload a GLB file first!');
+            return;
+        }
+
+        const audioInput = document.createElement('input');
+        audioInput.type = 'file';
+        audioInput.accept = 'audio/*';
+        audioInput.click();
+
+        audioInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                experience.media.push({
+                    type: 'audio',
+                    file: file,
+                    name: file.name
+                });
+                playMedia(file, 'audio');
+            }
+        });
+    });
+
+    // Add Video
+    addVideoBtn.addEventListener('click', () => {
+        if (!experience.model) {
+            alert('Please upload a GLB file first!');
+            return;
+        }
+
+        const videoInput = document.createElement('input');
+        videoInput.type = 'file';
+        videoInput.accept = 'video/*';
+        videoInput.click();
+
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                experience.media.push({
+                    type: 'video',
+                    file: file,
+                    name: file.name
+                });
+                playMedia(file, 'video');
+            }
+        });
+    });
+
+    // Preview Experience
+    previewExperienceBtn.addEventListener('click', () => {
+        if (!experience.model) {
+            alert('Please create an experience first!');
+            return;
+        }
+        
+        const previewCanvas = document.getElementById('preview-canvas');
+        const previewViewer = document.createElement('model-viewer');
+        previewViewer.src = URL.createObjectURL(experience.model);
+        previewViewer.setAttribute('camera-controls', '');
+        previewViewer.setAttribute('touch-action', 'pan-y');
+        previewViewer.style.width = '100%';
+        previewViewer.style.height = '100%';
+        
+        // Add all annotations to preview
+        experience.annotations.forEach((annotation, index) => {
+            const hotspot = document.createElement('button');
+            hotspot.slot = `preview-hotspot-${index}`;
+            hotspot.classList.add('hotspot');
+            hotspot.dataset.position = annotation.position.toString();
+            
+            const annotationElement = document.createElement('div');
+            annotationElement.classList.add('annotation');
+            annotationElement.textContent = annotation.text;
+            annotationElement.slot = `preview-annotation-${index}`;
+            
+            previewViewer.appendChild(hotspot);
+            previewViewer.appendChild(annotationElement);
+        });
+        
+        previewCanvas.innerHTML = '';
+        previewCanvas.appendChild(previewViewer);
+        previewContainer.style.display = 'block';
+    });
+
+    function closePreview() {
+        previewContainer.style.display = 'none';
+    }
+
+    // Save Experience
+    saveExperienceBtn.addEventListener('click', () => {
+        if (!experience.model) {
+            alert('Please upload a GLB file first!');
+            return;
+        }
+
+        console.log('Saving experience:', experience);
+        alert('Experience saved successfully!');
+    });
+
+    // Clear Experience
+    clearExperienceBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear the current experience?')) {
+            experience = {
+                model: null,
+                annotations: [],
+                media: []
+            };
+            canvas.innerHTML = '<p>Upload a GLB file to begin creating your experience!</p>';
+            modelViewer = null;
+            isAnnotationMode = false;
+            mediaPlayer.style.display = 'none';
+            videoPlayer.style.display = 'none';
+            audioPlayer.style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
